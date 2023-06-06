@@ -1,0 +1,5 @@
+# Directories starting with "_"
+/_*/
+
+# macOS
+.DS_Store

@@ -1,0 +1,44 @@
+name: Build "java-spring-boot-gradle"
+run-name: "Building \"java-spring-boot-gradle\", commit message: ${{ github.event.head_commit.message }}"
+
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  IMAGE_NAME: ${{ github.repository }}
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - java-spring-boot-gradle/**
+
+jobs:
+  build:
+    name: Build "java-spring-boot-gradle"
+    permissions: write-all
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get variables
+        id: variables
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Login to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          context: java-spring-boot-gradle
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/java-spring-boot-gradle:${{ github.ref_name }}-${{ steps.variables.outputs.sha_short }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/java-spring-boot-gradle:latest

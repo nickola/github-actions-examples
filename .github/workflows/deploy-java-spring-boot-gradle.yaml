@@ -1,0 +1,41 @@
+name: Deploy "java-spring-boot-gradle"
+run-name: "Deploying \"java-spring-boot-gradle\", tag: ${{ github.event.inputs.tag }}"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository }}/java-spring-boot-gradle
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag (from Packages)
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy "java-spring-boot-gradle"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get tag data
+        id: registry
+        run: |
+          curl --silent --output /dev/null --write-out "status=%{http_code}" \
+               --header "Authorization: Bearer $(echo -n ${{ secrets.GITHUB_TOKEN }} | base64 | tr -d \\r)" \
+               --request GET https://${{ env.REGISTRY }}/v2/${{ env.IMAGE }}/manifests/${{ github.event.inputs.tag }} \
+          >> $GITHUB_OUTPUT
+
+      - name: Check tag
+        if: steps.registry.outputs.status != '200'
+        uses: actions/github-script@v6
+        with:
+          script: |
+              core.setFailed("Image tag not found: ${{ github.event.inputs.tag }}")
+
+      - name: Update variables
+        id: variables
+        run: echo "image=${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+
+      - name: Show image (it is just an example, we will not deploy)
+        run: "echo \"Image: ${{ steps.variables.outputs.image }}\""
