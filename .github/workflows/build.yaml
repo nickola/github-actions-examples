@@ -25,6 +25,20 @@ jobs:
 
       - name: Setup and execute Gradle build
         uses: gradle/gradle-build-action@v2
+        id: gradle
         with:
           gradle-version: 6.5
-          arguments: build
+          arguments: build --scan
+
+      - name: Add build scan URL as PR comment
+        uses: actions/github-script@v5
+        if: github.event_name == 'pull_request' && failure()
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ ${{ github.workflow }} failed: ${{ steps.gradle.outputs.build-scan-url }}'
+            })
